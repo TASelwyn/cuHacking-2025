@@ -145,7 +145,7 @@ int main()
                 printf("UPDATE COUNT: %d \n", updateCount);
             }
         }
-    }.
+    }
 
     return(EXIT_SUCCESS);
 }
