@@ -1,7 +1,7 @@
 #define SENSOR_API_HOSTNAME "PLANTR_API_HOSTNAME"
 #define SENSOR_API_API_KEY  "PLANTR_API_KEY"
-#define SENSOR_API_SERIAL   "PLANTR_SERIAL_NUM"
-#define SENSOR_API_INTERVAL 15
+#define SENSOR_SERIAL_NUM   "PLANTR_SERIAL_NUM"
+#define SENSOR_UPDATE_INTERVAL 15
 
 #define SENSOR_API_QUERY_STR "mutation UpsertPlant($plantData: UpsertPlantDataInput) { upsert(plantData: $plantData) { success result errors { message } } }"
 
