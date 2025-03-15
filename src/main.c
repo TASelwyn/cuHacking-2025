@@ -12,7 +12,50 @@
 #include "utils/tools.h"
 #include "utils/sensors.h"
 
+#include <unistd.h>
+#include "rpi_gpio.h"
+ 
+// Define the GPIO pin number (pin 36 on Raspberry Pi 4, which corresponds to GPIO16)
+#define GPIO_PIN GPIO4
 
+// Initializes the specified GPIO pin for controlling an LED by setting it as an output pin.
+static bool init_led(int gpio_pin)
+{
+// Configure the given GPIO pin as an output pin.
+if (rpi_gpio_setup(gpio_pin, GPIO_OUT))
+{
+    perror("rpi_gpio_setup");
+    return false;
+}
+
+return true;
+}
+
+// Turns on the LED connected to the specified GPIO pin.
+static bool led_on(int gpio_pin)
+{
+// Set selected GPIO to high.
+if (rpi_gpio_output(gpio_pin, GPIO_HIGH))
+{
+    perror("rpi_gpio_output");
+    return false;
+}
+
+return true;
+}
+
+// Turns off the LED connected to the specified GPIO pin.
+static bool led_off(int gpio_pin)
+{
+// Set selected GPIO to low.
+if (rpi_gpio_output(gpio_pin, GPIO_LOW))
+{
+    perror("rpi_gpio_output");
+    return false;
+}
+
+return true;
+}
 int main()
 {
     printf("Starting plantr sensor... \n");
@@ -47,7 +90,7 @@ int main()
     timer_settime(timer_id, 0, &itime, NULL);
 
     int updateCount = 0;
-
+    init_led(GPIO_PIN);
     apiDetails* api = get_api_details();
     if (api == NULL) { printf("Terminating plantr sensor. \n"); return -1;}
 
@@ -68,6 +111,11 @@ int main()
 
                 updateCount++;
                 printf("UPDATE COUNT: %d \n", updateCount);
+                if (updateCount %2 == 1) {
+                    led_on(GPIO_PIN);
+                } else {
+                    led_off(GPIO_PIN);
+                }
             }
         }
     }
