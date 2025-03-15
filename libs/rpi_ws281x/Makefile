@@ -1,7 +1,20 @@
-ARTIFACT = qnx_plantr
+#Build artifact type, possible values shared, static and exe
+ARTIFACT_TYPE = static
+PROJECT_NAME = rpi_ws281x
+
+LDFLAGS_shared = -shared -o
+ARTIFACT_NAME_shared = lib$(PROJECT_NAME).so
+
+LDFLAGS_static = -static -a
+ARTIFACT_NAME_static = lib$(PROJECT_NAME).a
+
+LDFLAGS_exe = -o
+ARTIFACT_NAME_exe = $(PROJECT_NAME)
+
+ARTIFACT = $(ARTIFACT_NAME_$(ARTIFACT_TYPE))
 
 #Build architecture/variant string, possible values: x86, armv7le, etc...
-PLATFORM = aarch64le
+PLATFORM ?= x86_64
 
 #Build profile, possible values: release, debug, profile, coverage
 BUILD_PROFILE ?= debug
@@ -14,21 +27,8 @@ TARGET = $(OUTPUT_DIR)/$(ARTIFACT)
 
 CC = qcc -Vgcc_nto$(PLATFORM)
 CXX = q++ -Vgcc_nto$(PLATFORM)_cxx
+
 LD = $(CC)
-
-#User defined include/preprocessor flags and libraries
-INCLUDES += -Ilibs/system/gpio
-INCLUDES += -Ilibs/rpi_spi/public
-INCLUDES += -Ilibs/rpi_gpio/public
-INCLUDES += -Ilibs/rpi_ws281x/public
-
-LIBS += -Llibs/rpi_ws281x/build/$(CONFIG_NAME)
-LIBS += -lrpi_ws281x
-LIBS += -Llibs/rpi_spi/build/$(CONFIG_NAME)
-LIBS += -lrpi_spi
-LIBS += -Llibs/rpi_gpio/build/$(CONFIG_NAME)
-LIBS += -lrpi_gpio
-LIBS += -lm
 
 #Compiler flags for build profiles
 CCFLAGS_release += -O2
@@ -39,10 +39,9 @@ CCFLAGS_profile += -g -O0 -finstrument-functions
 LIBS_profile += -lprofilingS
 
 #Generic compiler flags (which include build type flags)
-CCFLAGS_all += -Wall -fmessage-length=0
+CCFLAGS_all += -Wall -fmessage-length=0 -fPIC
 CCFLAGS_all += $(CCFLAGS_$(BUILD_PROFILE))
-#Shared library has to be compiled with -fPIC
-#CCFLAGS_all += -fPIC
+
 LDFLAGS_all += $(LDFLAGS_$(BUILD_PROFILE))
 LIBS_all += $(LIBS_$(BUILD_PROFILE))
 DEPS = -Wp,-MMD,$(@:%.o=%.d),-MT,$@
@@ -50,33 +49,42 @@ DEPS = -Wp,-MMD,$(@:%.o=%.d),-MT,$@
 #Macro to expand files recursively: parameters $1 -  directory, $2 - extension, i.e. cpp
 rwildcard = $(wildcard $(addprefix $1/*.,$2)) $(foreach d,$(wildcard $1/*),$(call rwildcard,$d,$2))
 
+# includes
+INCLUDES += -I../system/gpio
+INCLUDES += -I../rpi_spi/public
+
 #Source list
-SRCS = $(call rwildcard, src, c)
+SRCS = $(call rwildcard, ., c cpp)
 
 #Object files list
 OBJS = $(addprefix $(OUTPUT_DIR)/,$(addsuffix .o, $(basename $(SRCS))))
 
-#Compiling rule
+#Compiling rule for c
 $(OUTPUT_DIR)/%.o: %.c
-	@mkdir -p $(dir $@)
+	-@mkdir -p $(OUTPUT_DIR)
 	$(CC) -c $(DEPS) -o $@ $(INCLUDES) $(CCFLAGS_all) $(CCFLAGS) $<
 
+#Compiling rule for c++
+$(OUTPUT_DIR)/%.o: %.cpp
+	-@mkdir -p $(OUTPUT_DIR)
+	$(CXX) -c $(DEPS) -o $@ $(INCLUDES) $(CCFLAGS_all) $(CCFLAGS) $<
+
 #Linking rule
-LDFLAGS = -lcurl -ljson
-$(TARGET):$(OBJS) librpi_gpio.a  librpi_spi.a librpi_ws281x.a
-	$(LD) -o $(TARGET) $(LDFLAGS_all) $(LDFLAGS) $(OBJS) $(LIBS_all) $(LIBS)
+$(TARGET):$(OBJS) librpi_spi.a
+	$(LD) $(LDFLAGS_$(ARTIFACT_TYPE)) $(TARGET) $(LDFLAGS_all) $(LDFLAGS) $(OBJS) $(LIBS_all) $(LIBS)
 
 #Rules section for default compilation and linking
 all: $(TARGET)
-librpi_gpio.a:
-	$(MAKE) -Clibs/rpi_gpio
+
 librpi_spi.a:
-	$(MAKE) -Clibs/rpi_spi
-librpi_ws281x.a:
-	$(MAKE) -Clibs/rpi_ws281x
+	$(MAKE) -C../rpi_spi
+
+CLEAN_DIRS := $(shell find build -type d)
+CLEAN_PATTERNS := *.o *.d $(ARTIFACT_NAME_exe) $(ARTIFACT_NAME_shared) $(ARTIFACT_NAME_static)
+CLEAN_FILES := $(foreach DIR,$(CLEAN_DIRS),$(addprefix $(DIR)/,$(CLEAN_PATTERNS)))
 
 clean:
-	rm -fr $(OUTPUT_DIR)
+	rm -f $(CLEAN_FILES)
 
 rebuild: clean all
 
