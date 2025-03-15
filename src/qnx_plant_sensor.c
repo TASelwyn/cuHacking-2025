@@ -2,9 +2,10 @@
 #include <stdlib.h>
 #include <time.h>
 #include <pthread.h>
+#include <string.h>
 #include <sys/neutrino.h>
 #include <curl/curl.h>
-#include <string.h>
+#include <sys/json.h>
 #include "define.h"
 
 char* get_env_var(char* env_var_key) {
@@ -20,7 +21,7 @@ char* get_env_var(char* env_var_key) {
     return env_var_value;
 }
 
-int post_sensor(char* apiHost, char* apiKey, char* apiSerial) {
+int post_sensor(char* apiHost, char* apiKey, char* apiSerial, int updateCount) {
     CURL *curl;
     CURLcode res;
    
@@ -31,25 +32,61 @@ int post_sensor(char* apiHost, char* apiKey, char* apiSerial) {
     curl = curl_easy_init();
     if (curl) {
 
-      struct curl_slist *headers = NULL;
-      headers = curl_slist_append(headers, "Content-Type: application/json");
-      // Init post request
-      curl_easy_setopt(curl, CURLOPT_URL, apiHost);
-      curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-      curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
-      curl_easy_setopt(curl, CURLOPT_XOAUTH2_BEARER, apiKey);
-      curl_easy_setopt(curl, CURLOPT_USERAGENT, "Devilish Plantr/0.69");
-      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "sensor=69420&project=curl");
-   
-      /* Perform the request, res gets the return code */
-      res = curl_easy_perform(curl);
-      /* Check for errors */
-      if(res != CURLE_OK)
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+
+        // Init post request
+        curl_easy_setopt(curl, CURLOPT_URL, apiHost);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
+        curl_easy_setopt(curl, CURLOPT_XOAUTH2_BEARER, apiKey);
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "Devilish Plantr/0.69");
+        //curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "sensor=69420&project=curl");
+
+        json_encoder_t *enc = json_encoder_create();
+
+        
+        json_encoder_start_object(enc, NULL);
+            json_encoder_add_string(enc, "query", SENSOR_API_QUERY_STR);
+
+            json_encoder_start_object(enc, "variables");
+                json_encoder_start_object(enc, "plantData");
+                    json_encoder_add_int(enc, "serialNum", 69);
+                    json_encoder_add_bool(enc, "moisture", true);
+                    json_encoder_add_int(enc, "health", 50000);
+                    json_encoder_add_int(enc, "waterLevel", updateCount*3);
+                    json_encoder_add_string(enc, "waterTime", "Sometime, idc");
+                json_encoder_end_object(enc);
+            json_encoder_end_object(enc);
+
+        json_encoder_end_object(enc);
+
+        json_encoder_error_t status = json_encoder_get_status(enc);
+        
+        // If everything above has succeeded, json_encoder_get_status() will return 
+        // JSON_ENCODER_OK
+        if ( status != JSON_ENCODER_OK ) {
+            printf("Data preparation failed\n");
+            return false;
+        }
+    
+        // Write the JSON data into the string space provided by the caller
+        //snprintf(str, max_finfo_size, "JSON:%s\n", json_encoder_buffer(enc));
+        
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_encoder_buffer(enc));
+
+        /* Perform the request, res gets the return code */
+        res = curl_easy_perform(curl);
+        
+        /* Check for errors */
+        if(res != CURLE_OK)
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
                 curl_easy_strerror(res));
-   
-      /* always cleanup */
-      curl_easy_cleanup(curl);
+
+        /* always cleanup */
+        curl_easy_cleanup(curl);
+        json_encoder_destroy(enc);
     }
     curl_global_cleanup();
     return 0;
@@ -84,7 +121,7 @@ int main()
 
     itime.it_value.tv_sec = 2;
     itime.it_value.tv_nsec = 500 * 1E6;
-    itime.it_interval.tv_sec = SENSOR_INTERVAL_SECS;
+    itime.it_interval.tv_sec = SENSOR_API_INTERVAL;
     itime.it_interval.tv_nsec = 0;
     timer_settime(timer_id, 0, &itime, NULL);
 
@@ -97,13 +134,15 @@ int main()
     char* apiSerial = get_env_var(SENSOR_API_SERIAL); 
     if (apiSerial == NULL) { printf("Terminating sensor. \n"); return -1;}
 
+    int updateCount = 0;
     for (;;) {
         rcvid = MsgReceive(chid, &msg, sizeof(msg), NULL);
         if (rcvid == 0) { /* we got a pulse */
             if (msg.pulse.code == MY_PULSE_CODE) {
             	//fetch_quote();
-                post_sensor(apiHost, apiKey, apiSerial);
-                printf("POST API KEY: %s \n", apiKey);
+                post_sensor(apiHost, apiKey, apiSerial, updateCount);
+                updateCount++;
+                printf("UPDATE COUNT: %d \n", updateCount);
             }
         }
     }
