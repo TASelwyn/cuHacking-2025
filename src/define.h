@@ -22,7 +22,7 @@ typedef struct {
 
 typedef struct {
     int serialNum;
-    bool moisture;
+    int moisture;
     int health;
     int waterLevel;
     char* waterTime;

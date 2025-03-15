@@ -21,7 +21,7 @@ char* get_env_var(char* env_var_key) {
     return env_var_value;
 }
 
-int post_sensor(char* apiHost, char* apiKey, char* apiSerial, int updateCount) {
+int post_sensor(char* apiHost, char* apiKey, int serialNum, int updateCount) {
     CURL *curl;
     CURLcode res;
    
@@ -46,13 +46,12 @@ int post_sensor(char* apiHost, char* apiKey, char* apiSerial, int updateCount) {
 
         json_encoder_t *enc = json_encoder_create();
 
-        
         json_encoder_start_object(enc, NULL);
             json_encoder_add_string(enc, "query", SENSOR_API_QUERY_STR);
 
             json_encoder_start_object(enc, "variables");
                 json_encoder_start_object(enc, "plantData");
-                    json_encoder_add_int(enc, "serialNum", 69);
+                    json_encoder_add_int(enc, "serialNum", serialNum);
                     json_encoder_add_bool(enc, "moisture", true);
                     json_encoder_add_int(enc, "health", 50000);
                     json_encoder_add_int(enc, "waterLevel", updateCount*3);
@@ -133,19 +132,20 @@ int main()
 
     char* apiSerial = get_env_var(SENSOR_API_SERIAL); 
     if (apiSerial == NULL) { printf("Terminating sensor. \n"); return -1;}
+    char *endptr;      
+    long serialNum = strtol(apiSerial, &endptr, 10);
 
     int updateCount = 0;
     for (;;) {
         rcvid = MsgReceive(chid, &msg, sizeof(msg), NULL);
-        if (rcvid == 0) { /* we got a pulse */
+        if (rcvid == 0) {
             if (msg.pulse.code == MY_PULSE_CODE) {
-            	//fetch_quote();
-                post_sensor(apiHost, apiKey, apiSerial, updateCount);
+                post_sensor(apiHost, apiKey, (int) serialNum, updateCount);
                 updateCount++;
                 printf("UPDATE COUNT: %d \n", updateCount);
             }
         }
-    }
+    }.
 
     return(EXIT_SUCCESS);
 }
