@@ -26,7 +26,7 @@ char* get_env_var(char* env_var_key) {
     return env_var_value;
 }
 
-int post_sensor(int updateCount) {
+int post_sensor(sensorData* data, int updateCount) {
     CURL *curl;
     CURLcode res;
    
@@ -35,19 +35,10 @@ int post_sensor(int updateCount) {
    
     /* get a curl handle */
     curl = curl_easy_init();
-    if (curl) {
 
+    if (curl) {
         struct curl_slist *headers = NULL;
         headers = curl_slist_append(headers, "Content-Type: application/json");
-
-        // Init post request
-        curl_easy_setopt(curl, CURLOPT_URL, apiHost);
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
-        curl_easy_setopt(curl, CURLOPT_XOAUTH2_BEARER, apiKey);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, "Devilish Plantr/0.69");
-        //curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "sensor=69420&project=curl");
 
         json_encoder_t *enc = json_encoder_create();
 
@@ -57,10 +48,10 @@ int post_sensor(int updateCount) {
             json_encoder_start_object(enc, "variables");
                 json_encoder_start_object(enc, "plantData");
                     json_encoder_add_int(enc, "serialNum", serialNum);
-                    json_encoder_add_bool(enc, "moisture", true);
-                    json_encoder_add_int(enc, "health", 50000);
-                    json_encoder_add_int(enc, "waterLevel", updateCount*3);
-                    json_encoder_add_string(enc, "waterTime", "Sometime, idc");
+                    json_encoder_add_bool(enc, "moisture", data->moisture);
+                    json_encoder_add_int(enc, "health", data->health);
+                    json_encoder_add_int(enc, "waterLevel", data->waterLevel*3);
+                    json_encoder_add_string(enc, "waterTime", "Shall be null");
                 json_encoder_end_object(enc);
             json_encoder_end_object(enc);
 
@@ -68,16 +59,18 @@ int post_sensor(int updateCount) {
 
         json_encoder_error_t status = json_encoder_get_status(enc);
         
-        // If everything above has succeeded, json_encoder_get_status() will return 
-        // JSON_ENCODER_OK
         if ( status != JSON_ENCODER_OK ) {
             printf("Data preparation failed\n");
             return false;
         }
-    
-        // Write the JSON data into the string space provided by the caller
-        //snprintf(str, max_finfo_size, "JSON:%s\n", json_encoder_buffer(enc));
-        
+
+        // Init post request
+        curl_easy_setopt(curl, CURLOPT_URL, apiHost);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
+        curl_easy_setopt(curl, CURLOPT_XOAUTH2_BEARER, apiKey);
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "Devilish Plantr/0.69");        
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_encoder_buffer(enc));
 
         /* Perform the request, res gets the return code */
@@ -93,7 +86,7 @@ int post_sensor(int updateCount) {
         json_encoder_destroy(enc);
     }
     curl_global_cleanup();
-    return 0;
+    return true;
 }
 
 int main()
@@ -132,7 +125,7 @@ int main()
     apiHost = get_env_var(SENSOR_API_HOSTNAME); 
     if (apiHost == NULL) { printf("Terminating sensor. \n"); return -1;}
 
-    apiKey = get_env_var(SENSOR_API_API_KEY); 
+    apiKey = get_env_var(SENSOR_API_AUTH_KEY); 
     if (apiKey == NULL) { printf("Terminating sensor. \n"); return -1;}
 
     char* sensorSerialChar = get_env_var(SENSOR_SERIAL_NUM); 
@@ -141,13 +134,21 @@ int main()
     serialNum = (int) strtol(sensorSerialChar, &endptr, 10);
 
     int updateCount = 0;
+
+    sensorData* latestData = (sensorData*) malloc(sizeof(sensorData));
+
+    latestData->moisture = true;
+    latestData->health = 123;
+    latestData->waterLevel = 0;
+    latestData->waterTime = NULL;
+
     for (;;) {
         rcvid = MsgReceive(chid, &msg, sizeof(msg), NULL);
         if (rcvid == 0) {
             if (msg.pulse.code == MY_PULSE_CODE) {
+                latestData->waterLevel = updateCount*3;
+                post_sensor(latestData, updateCount);
 
-
-                post_sensor(updateCount);
                 updateCount++;
                 printf("UPDATE COUNT: %d \n", updateCount);
             }
