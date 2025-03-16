@@ -79,8 +79,8 @@ int main() {
 
                 updateCount++;
                 printf("\npostSensorDataSent: %d \n", updateCount);
-                if (updateCount % 2 == 1) {
-                //if (read_gpio_in(GPIO_WATER)) {
+                //if (updateCount % 2 == 1) {
+                if (read_gpio_in(GPIO_WATER)) {
                     set_gpio_out(GPIO_LED, GPIO_HIGH);
                 } else {
                     set_gpio_out(GPIO_LED, GPIO_LOW);

@@ -53,6 +53,8 @@ apiDetails *get_api_details() {
 }
 
 bool read_gpio_in(int gpio_pin) {
+    int value = 1;
+    //value = rpi_gpio_read(gpio_pin);
     /*if (rpi_gpio_read(gpio_pin)) {
         perror("rpi_gpio_read");
         return false;

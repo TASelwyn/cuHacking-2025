@@ -17,17 +17,20 @@ CXX = q++ -Vgcc_nto$(PLATFORM)_cxx
 LD = $(CC)
 
 #User defined include/preprocessor flags and libraries
-INCLUDES += -Ilibs/system/gpio
-INCLUDES += -Ilibs/rpi_spi/public
-INCLUDES += -Ilibs/rpi_gpio/public
-INCLUDES += -Ilibs/rpi_ws281x/public
+INCLUDES += -I libs/system/gpio
+INCLUDES += -I libs/rpi_gpio/public
+INCLUDES += -I libs/rpi_i2c/public
+INCLUDES += -I libs/rpi_spi/public
+INCLUDES += -I libs/rpi_ws281x/public
 
-LIBS += -Llibs/rpi_ws281x/build/$(CONFIG_NAME)
-LIBS += -lrpi_ws281x
-LIBS += -Llibs/rpi_spi/build/$(CONFIG_NAME)
-LIBS += -lrpi_spi
-LIBS += -Llibs/rpi_gpio/build/$(CONFIG_NAME)
+LIBS += -L libs/rpi_gpio/build/$(CONFIG_NAME)
 LIBS += -lrpi_gpio
+LIBS += -L libs/rpi_i2c/build/$(CONFIG_NAME)
+LIBS += -lrpi_i2c
+LIBS += -L libs/rpi_spi/build/$(CONFIG_NAME)
+LIBS += -lrpi_spi
+LIBS += -L libs/rpi_ws281x/build/$(CONFIG_NAME)
+LIBS += -lrpi_ws281x
 LIBS += -lm
 
 #Compiler flags for build profiles
@@ -63,17 +66,19 @@ $(OUTPUT_DIR)/%.o: %.c
 
 #Linking rule
 LDFLAGS = -lcurl -ljson
-$(TARGET):$(OBJS) librpi_gpio.a  librpi_spi.a librpi_ws281x.a
+$(TARGET):$(OBJS) librpi_i2c.a librpi_gpio.a librpi_spi.a librpi_ws281x.a
 	$(LD) -o $(TARGET) $(LDFLAGS_all) $(LDFLAGS) $(OBJS) $(LIBS_all) $(LIBS)
 
 #Rules section for default compilation and linking
 all: $(TARGET)
 librpi_gpio.a:
-	$(MAKE) -Clibs/rpi_gpio
+	$(MAKE) -C libs/rpi_gpio
+librpi_i2c.a:
+	$(MAKE) -C libs/rpi_i2c	
 librpi_spi.a:
-	$(MAKE) -Clibs/rpi_spi
+	$(MAKE) -C libs/rpi_spi
 librpi_ws281x.a:
-	$(MAKE) -Clibs/rpi_ws281x
+	$(MAKE) -C libs/rpi_ws281x
 
 clean:
 	rm -fr $(OUTPUT_DIR)
