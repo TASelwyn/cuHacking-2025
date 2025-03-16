@@ -1,15 +1,15 @@
+#include <curl/curl.h>
+#include <fcntl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/neutrino.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <stdint.h>
 #include <string.h>
-#include <time.h>
-#include <curl/curl.h>
+#include <sys/ioctl.h>
 #include <sys/json.h>
+#include <sys/neutrino.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "../define.h"
 
@@ -20,14 +20,13 @@ int gather_data() {
     return 0;
 }
 
-
-int post_sensor(apiDetails* api, sensorData* data) {
+int post_sensor(apiDetails *api, sensorData *data) {
     CURL *curl;
     CURLcode res;
-   
+
     /* In Windows, this inits the Winsock stuff */
     curl_global_init(CURL_GLOBAL_ALL);
-   
+
     /* get a curl handle */
     curl = curl_easy_init();
 
@@ -38,23 +37,23 @@ int post_sensor(apiDetails* api, sensorData* data) {
         json_encoder_t *enc = json_encoder_create();
 
         json_encoder_start_object(enc, NULL);
-            json_encoder_add_string(enc, "query", SENSOR_API_QUERY_STR);
+        json_encoder_add_string(enc, "query", SENSOR_API_QUERY_STR);
 
-            json_encoder_start_object(enc, "variables");
-                json_encoder_start_object(enc, "plantData");
-                    json_encoder_add_int(enc, "serialNum", api->serial_number);
-                    json_encoder_add_bool(enc, "moisture", data->moisture);
-                    json_encoder_add_int(enc, "health", data->health);
-                    json_encoder_add_int(enc, "waterLevel", data->waterLevel);
-                    json_encoder_add_string(enc, "waterTime", "Shall be null");
-                json_encoder_end_object(enc);
-            json_encoder_end_object(enc);
+        json_encoder_start_object(enc, "variables");
+        json_encoder_start_object(enc, "plantData");
+        json_encoder_add_int(enc, "serialNum", api->serial_number);
+        json_encoder_add_bool(enc, "moisture", data->moisture);
+        json_encoder_add_int(enc, "health", data->health);
+        json_encoder_add_int(enc, "waterLevel", data->waterLevel);
+        json_encoder_add_string(enc, "waterTime", "Shall be null");
+        json_encoder_end_object(enc);
+        json_encoder_end_object(enc);
 
         json_encoder_end_object(enc);
 
         json_encoder_error_t status = json_encoder_get_status(enc);
-        
-        if ( status != JSON_ENCODER_OK ) {
+
+        if (status != JSON_ENCODER_OK) {
             printf("Data preparation failed\n");
             return EXIT_FAILURE;
         }
@@ -65,16 +64,16 @@ int post_sensor(apiDetails* api, sensorData* data) {
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
         curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
         curl_easy_setopt(curl, CURLOPT_XOAUTH2_BEARER, api->bearer_token);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, "Devilish Plantr/0.69");        
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "Devilish Plantr/0.69");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_encoder_buffer(enc));
 
         /* Perform the request, res gets the return code */
         res = curl_easy_perform(curl);
-        
+
         /* Check for errors */
-        if(res != CURLE_OK)
-        fprintf(stderr, "curl_easy_perform() failed: %s\n",
-                curl_easy_strerror(res));
+        if (res != CURLE_OK)
+            fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                    curl_easy_strerror(res));
 
         /* always cleanup */
         curl_easy_cleanup(curl);
