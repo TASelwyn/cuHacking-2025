@@ -1,1 +1,1 @@
-void bmp280_test();
+void init_bmp280();

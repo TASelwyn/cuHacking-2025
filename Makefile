@@ -82,6 +82,7 @@ librpi_ws281x.a:
 
 clean:
 	rm -fr $(OUTPUT_DIR)
+	rm -rf libs/*/build/*
 
 rebuild: clean all
 

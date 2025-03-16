@@ -55,12 +55,7 @@ apiDetails *get_api_details() {
 bool read_gpio_in(int gpio_pin) {
     int value = 1;
     //value = rpi_gpio_read(gpio_pin);
-    /*if (rpi_gpio_read(gpio_pin)) {
-        perror("rpi_gpio_read");
-        return false;
-    }*/
-
-    return true;
+    return value == 8 ? true : false;
 }
 
 bool init_gpio(int gpio_pin, enum gpio_config_t gpio_inout) {
@@ -79,4 +74,30 @@ bool set_gpio_out(int gpio_pin, enum gpio_config_t gpio_LOW_OR_HIGH) {
     }
 
     return true;
+}
+
+int get_mock_number(char* filename, int numToGrab) {
+    FILE *file;
+    //char filename[] = "numbers.txt"; 
+    char buffer[256];
+    int number;
+
+    file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Error opening file");
+        return EXIT_FAILURE;
+    }
+
+    int line = 0;
+    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+        if (line >= numToGrab) {
+            number = atoi(buffer);
+            printf("Read number: %d\n", number);
+            return number;
+        }
+        
+        line++;
+    }
+
+    fclose(file);
 }

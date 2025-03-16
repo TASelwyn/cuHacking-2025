@@ -13,7 +13,7 @@
 #include <hw/i2c.h>
 
 #define I2C_SLAVE	0x0703	
-void bmp280_test() 
+void init_bmp280() 
 {
 	// Create I2C bus
 	int file;

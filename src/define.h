@@ -26,6 +26,6 @@ typedef struct {
     int moisture;
     int health;
     int waterLevel;
-    char* waterTime;
+    int humidity;
 } sensorData;
 #endif
