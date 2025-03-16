@@ -21,6 +21,7 @@ typedef struct {
 } apiDetails;
 
 typedef struct {
+    int temperature;
     int moisture;
     int health;
     int waterLevel;

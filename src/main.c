@@ -66,8 +66,8 @@ int main() {
             if (msg.pulse.code == MY_PULSE_CODE) {
                 latestData->waterLevel = updateCount * 3;
                 
-                //update_sensor_data(latestData);
-                //post_sensor_data(api, latestData);
+                update_sensor_data(latestData);
+                post_sensor_data(api, latestData);
 
                 updateCount++;
                 printf("\nUPDATE COUNT: %d \n", updateCount);

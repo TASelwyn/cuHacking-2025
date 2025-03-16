@@ -13,9 +13,11 @@
 
 #include "../define.h"
 
-int gather_data() {
-
+int update_sensor_data(sensorData* data) {
+    // gather data and update the struct here
     printf("gathering data...\n");
+    data->health = 3;
+    data->temperature = 1337;
 
     return 0;
 }
@@ -27,8 +29,9 @@ sensorData *initialize_sensor_data() {
         return NULL;
     }
 
-    data->moisture = true;
-    data->health = 123;
+    data->temperature = 0;
+    data->moisture = false;
+    data->health = 0;
     data->waterLevel = 0;
     data->waterTime = NULL;
 
