@@ -15,11 +15,13 @@
 
 #include "../define.h"
 #include "../sensors/bmp280.h"
+#include "tools.h"
 
 int initialize_sensors() {
     // init_bmt280();
     // init_dht22();
-    init_gpio(GPIO27);
+    init_gpio(GPIO_LED, GPIO_OUT);
+    init_gpio(GPIO_WATER, GPIO_IN);
 
     return EXIT_SUCCESS;
 }

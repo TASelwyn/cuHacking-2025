@@ -53,8 +53,6 @@ int main() {
     timer_settime(timer_id, 0, &itime, NULL);
 
     int updateCount = 0;
-    init_gpio(GPIO_LED, GPIO_OUT);
-    init_gpio(GPIO_WATER, GPIO_IN);
 
     printf("Prepping sensor data storage... \n");
     sensorData *latestData = initialize_sensor_data();
