@@ -52,7 +52,7 @@ apiDetails *get_api_details() {
     return api;
 }
 
-static bool init_led(int gpio_pin) {
+bool init_led(int gpio_pin) {
     if (rpi_gpio_setup(gpio_pin, GPIO_OUT)) {
         perror("rpi_gpio_setup");
         return false;
@@ -61,7 +61,7 @@ static bool init_led(int gpio_pin) {
     return true;
 }
 
-static bool led_on(int gpio_pin) {
+bool led_on(int gpio_pin) {
     if (rpi_gpio_output(gpio_pin, GPIO_HIGH)) {
         perror("rpi_gpio_output");
         return false;
@@ -70,7 +70,7 @@ static bool led_on(int gpio_pin) {
     return true;
 }
 
-static bool led_off(int gpio_pin) {
+bool led_off(int gpio_pin) {
     if (rpi_gpio_output(gpio_pin, GPIO_LOW)) {
         perror("rpi_gpio_output");
         return false;

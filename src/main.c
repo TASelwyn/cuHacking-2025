@@ -15,9 +15,9 @@
 #include "rpi_gpio.h"
 #include <unistd.h>
 
-// Define the GPIO pin number (pin 36 on Raspberry Pi 4, which corresponds to
-// GPIO16)
-#define GPIO_PIN GPIO4
+typedef union {
+    struct _pulse   pulse;
+} my_message_t;
 
 int main() {
     printf("Starting plantr sensor... \n");
@@ -52,7 +52,7 @@ int main() {
     timer_settime(timer_id, 0, &itime, NULL);
 
     int updateCount = 0;
-    init_led(GPIO_PIN);
+    init_led(GPIO_LED);
 
     sensorData *latestData = initialize_sensor_data();
     assert(latestData != NULL);
@@ -66,15 +66,15 @@ int main() {
             if (msg.pulse.code == MY_PULSE_CODE) {
                 latestData->waterLevel = updateCount * 3;
                 
-                update_sensor_data(latestData);
-                post_sensor_data(api, latestData);
+                //update_sensor_data(latestData);
+                //post_sensor_data(api, latestData);
 
                 updateCount++;
                 printf("\nUPDATE COUNT: %d \n", updateCount);
                 if (updateCount % 2 == 1) {
-                    led_on(GPIO_PIN);
+                    led_on(GPIO_LED);
                 } else {
-                    led_off(GPIO_PIN);
+                    led_off(GPIO_LED);
                 }
             }
         }
