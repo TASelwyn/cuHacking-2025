@@ -11,15 +11,17 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "rpi_gpio.h"
+
 #include "../define.h"
+#include "../sensors/bmp280.h"
 
-int update_sensor_data(sensorData* data) {
-    // gather data and update the struct here
-    printf("gathering data...\n");
-    data->health = 3;
-    data->temperature = 1337;
+int initialize_sensors() {
+    // init_bmt280();
+    // init_dht22();
+    init_gpio(GPIO27);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 sensorData *initialize_sensor_data() {
@@ -36,6 +38,42 @@ sensorData *initialize_sensor_data() {
     data->waterTime = NULL;
 
     return data;
+}
+
+int update_sensor_data(sensorData *data, int updateCount) {
+    // gather data and update the struct here
+    
+    FILE *file;
+    char filename[] = "numbers.txt";  // Change this to your file name
+    char buffer[256];  // Buffer to store each line
+    int number;
+
+    // Open the file for reading
+    file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Error opening file");
+        return EXIT_FAILURE;
+    }
+
+    // Read each line, parse it as a number, and print it
+    int lineNum = 0;
+    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+        if (lineNum == updateCount % 50) {
+            number = atoi(buffer);  // Convert string to integer
+            printf("Read number: %d\n", number);
+            data->health=number;
+        }
+        
+        lineNum++;
+    }
+
+    // Close the file
+    fclose(file);
+
+    //data->health = 73;
+    data->moisture = true;
+    data->temperature = 24;
+    return EXIT_SUCCESS;
 }
 
 int post_sensor_data(apiDetails *api, sensorData *data) {
@@ -60,10 +98,11 @@ int post_sensor_data(apiDetails *api, sensorData *data) {
         json_encoder_start_object(enc, "variables");
         json_encoder_start_object(enc, "plantData");
         json_encoder_add_int(enc, "serialNum", api->serial_number);
+        json_encoder_add_int(enc, "temperature", data->temperature);
         json_encoder_add_bool(enc, "moisture", data->moisture);
         json_encoder_add_int(enc, "health", data->health);
         json_encoder_add_int(enc, "waterLevel", data->waterLevel);
-        json_encoder_add_string(enc, "waterTime", "Shall be null");
+        json_encoder_add_string(enc, "waterTime", "qnx i2c is funky");
         json_encoder_end_object(enc);
         json_encoder_end_object(enc);
 

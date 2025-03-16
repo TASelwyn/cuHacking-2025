@@ -26,19 +26,19 @@ char *get_env_var(char *env_var_key) {
 apiDetails *get_api_details() {
     char *apiHost = get_env_var(SENSOR_API_HOSTNAME);
     if (apiHost == NULL) {
-        printf("Terminating plantr sensor. \n");
+        printf("Terminating plantr remote sensor. \n");
         return NULL;
     }
 
     char *apiKey = get_env_var(SENSOR_API_AUTH_KEY);
     if (apiKey == NULL) {
-        printf("Terminating plantr sensor. \n");
+        printf("Terminating plantr remote sensor. \n");
         return NULL;
     }
 
     char *sensorSerialChar = get_env_var(SENSOR_SERIAL_NUM);
     if (sensorSerialChar == NULL) {
-        printf("Terminating plantr sensor. \n");
+        printf("Terminating plantr remote sensor. \n");
         return NULL;
     }
     char *endptr;
@@ -52,8 +52,17 @@ apiDetails *get_api_details() {
     return api;
 }
 
-bool init_led(int gpio_pin) {
-    if (rpi_gpio_setup(gpio_pin, GPIO_OUT)) {
+bool read_gpio_in(int gpio_pin) {
+    /*if (rpi_gpio_read(gpio_pin)) {
+        perror("rpi_gpio_read");
+        return false;
+    }*/
+
+    return true;
+}
+
+bool init_gpio(int gpio_pin, enum gpio_config_t gpio_inout) {
+    if (rpi_gpio_setup(gpio_pin, gpio_inout)) {
         perror("rpi_gpio_setup");
         return false;
     }
@@ -61,17 +70,8 @@ bool init_led(int gpio_pin) {
     return true;
 }
 
-bool led_on(int gpio_pin) {
-    if (rpi_gpio_output(gpio_pin, GPIO_HIGH)) {
-        perror("rpi_gpio_output");
-        return false;
-    }
-
-    return true;
-}
-
-bool led_off(int gpio_pin) {
-    if (rpi_gpio_output(gpio_pin, GPIO_LOW)) {
+bool set_gpio_out(int gpio_pin, enum gpio_config_t gpio_LOW_OR_HIGH) {
+    if (rpi_gpio_output(gpio_pin, gpio_LOW_OR_HIGH)) {
         perror("rpi_gpio_output");
         return false;
     }

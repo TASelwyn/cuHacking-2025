@@ -16,11 +16,12 @@
 #include <unistd.h>
 
 typedef union {
-    struct _pulse   pulse;
+    struct _pulse pulse;
 } my_message_t;
 
 int main() {
-    printf("Starting plantr sensor... \n");
+    printf("--------------------------------------- \n");
+    printf("Starting Plantr remote sensor v0.1... \n");
 
     struct sigevent event;
     struct itimerspec itime;
@@ -52,29 +53,39 @@ int main() {
     timer_settime(timer_id, 0, &itime, NULL);
 
     int updateCount = 0;
-    init_led(GPIO_LED);
+    init_gpio(GPIO_LED, GPIO_OUT);
+    init_gpio(GPIO_WATER, GPIO_IN);
 
+    printf("Prepping sensor data storage... \n");
     sensorData *latestData = initialize_sensor_data();
     assert(latestData != NULL);
 
+    printf("Loading API Details... \n");
     apiDetails *api = get_api_details();
     assert(api != NULL);
+
+    printf("Initializing sensors... \n");
+    int initSens = initialize_sensors();
+    assert(!initSens);
 
     for (;;) {
         rcvid = MsgReceive(chid, &msg, sizeof(msg), NULL);
         if (rcvid == 0) {
             if (msg.pulse.code == MY_PULSE_CODE) {
                 latestData->waterLevel = updateCount * 3;
-                
-                update_sensor_data(latestData);
+
+                printf("Updating sensor data... \n");
+                update_sensor_data(latestData, updateCount);
+                printf("Posting sensor data... \n");
                 post_sensor_data(api, latestData);
 
                 updateCount++;
-                printf("\nUPDATE COUNT: %d \n", updateCount);
+                printf("\npostSensorDataSent: %d \n", updateCount);
                 if (updateCount % 2 == 1) {
-                    led_on(GPIO_LED);
+                //if (read_gpio_in(GPIO_WATER)) {
+                    set_gpio_out(GPIO_LED, GPIO_HIGH);
                 } else {
-                    led_off(GPIO_LED);
+                    set_gpio_out(GPIO_LED, GPIO_LOW);
                 }
             }
         }
