@@ -24,7 +24,6 @@ char *get_env_var(char *env_var_key) {
 }
 
 apiDetails *get_api_details() {
-
     char *apiHost = get_env_var(SENSOR_API_HOSTNAME);
     if (apiHost == NULL) {
         printf("Terminating plantr sensor. \n");
@@ -54,7 +53,6 @@ apiDetails *get_api_details() {
 }
 
 static bool init_led(int gpio_pin) {
-
     if (rpi_gpio_setup(gpio_pin, GPIO_OUT)) {
         perror("rpi_gpio_setup");
         return false;
@@ -64,7 +62,6 @@ static bool init_led(int gpio_pin) {
 }
 
 static bool led_on(int gpio_pin) {
-
     if (rpi_gpio_output(gpio_pin, GPIO_HIGH)) {
         perror("rpi_gpio_output");
         return false;
@@ -74,7 +71,6 @@ static bool led_on(int gpio_pin) {
 }
 
 static bool led_off(int gpio_pin) {
-
     if (rpi_gpio_output(gpio_pin, GPIO_LOW)) {
         perror("rpi_gpio_output");
         return false;

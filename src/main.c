@@ -54,29 +54,20 @@ int main() {
     int updateCount = 0;
     init_led(GPIO_PIN);
 
+    sensorData *latestData = initialize_sensor_data();
+    assert(latestData != NULL);
+
     apiDetails *api = get_api_details();
-    if (api == NULL) {
-        printf("Terminating plantr sensor. \n");
-        return -1;
-    }
-
-    sensorData *latestData = (sensorData *)malloc(sizeof(sensorData));
-    if (latestData == NULL) {
-        printf("Terminating plantr sensor. \n");
-        return -1;
-    }
-
-    latestData->moisture = true;
-    latestData->health = 123;
-    latestData->waterLevel = 0;
-    latestData->waterTime = NULL;
+    assert(api != NULL);
 
     for (;;) {
         rcvid = MsgReceive(chid, &msg, sizeof(msg), NULL);
         if (rcvid == 0) {
             if (msg.pulse.code == MY_PULSE_CODE) {
                 latestData->waterLevel = updateCount * 3;
-                post_sensor(api, latestData);
+                
+                update_sensor_data(latestData);
+                post_sensor_data(api, latestData);
 
                 updateCount++;
                 printf("\nUPDATE COUNT: %d \n", updateCount);

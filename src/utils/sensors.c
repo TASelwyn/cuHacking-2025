@@ -20,7 +20,22 @@ int gather_data() {
     return 0;
 }
 
-int post_sensor(apiDetails *api, sensorData *data) {
+sensorData *initialize_sensor_data() {
+    sensorData *data = (sensorData *)malloc(sizeof(sensorData));
+    if (data == NULL) {
+        printf("Terminating plantr sensor. \n");
+        return NULL;
+    }
+
+    data->moisture = true;
+    data->health = 123;
+    data->waterLevel = 0;
+    data->waterTime = NULL;
+
+    return data;
+}
+
+int post_sensor_data(apiDetails *api, sensorData *data) {
     CURL *curl;
     CURLcode res;
 
@@ -64,7 +79,7 @@ int post_sensor(apiDetails *api, sensorData *data) {
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
         curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
         curl_easy_setopt(curl, CURLOPT_XOAUTH2_BEARER, api->bearer_token);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, "Devilish Plantr/0.69");
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "Devilish Plantr/v4.20");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_encoder_buffer(enc));
 
         /* Perform the request, res gets the return code */
